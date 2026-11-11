@@ -258,8 +258,9 @@ with tab_soc:
         else:
             st.info("Abra a barra lateral esquerda (>) e clique em Simular Ataque ATO.")
 
-    with c_right:st.subheader("🚨 Aprovação Humana (Módulo 09)")
-        if pending_actions:
+    with c_right:
+       st.subheader("🚨 Aprovação Humana (Módulo 09)")
+       if pending_actions:
             for act in pending_actions:
                 with st.container(border=True):
                     st.markdown(f"**Ação:** `{act.action_type}`")

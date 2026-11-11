@@ -1,148 +1,4 @@
-
-import pandas as pd
-import requests
-import streamlit as st
-
-from database import (
-    AIAnalysis,
-    AuditLog,
-    AuthenticationEvent,
-    AutomatedAction,
-    Incident,
-    ModelVersion,
-    SessionLocal,
 )
-
-API_BASE_URL = "http://127.0.0.1:8000"
-API_HEADERS = {"x-api-key": "cg-secret-soc-2026"}
-
-st.set_page_config(
-    page_title="CyberGuard AI — SOC Platform",
-    page_icon="🛡️",
-    layout="wide",
-)
-
-st.title("🛡️ CyberGuard AI — Plataforma Inteligente de Cybersecurity")
-st.caption("SOC Operacional | Machine Learning Híbrido | Agente Analista de IA | Governança & Resposta")
-
-# ==========================================
-# BARRA LATERAL — SIMULADOR DE EVENTOS EM TEMPO REAL
-# ==========================================
-with st.sidebar:
-    st.header("⚡ Simulador de Telemetria")
-    st.write("Envie eventos sintéticos para a API avaliar com ML e IA:")
-
-    sim_user = st.selectbox(
-        "Conta Monitorada",
-        (
-            "ana.silva@nexuscorp-demo.local",
-            "carlos.mendes@nexuscorp-demo.local",
-            "beatriz.costa@nexuscorp-demo.local",
-        ),
-    )
-
-    if st.button("🚨 Simular Ataque ATO (Crítico)", use_container_width=True):
-        payload = {
-            "user": sim_user,
-            "source_ip": "198.51.100.42",
-            "asn_type": "HOSTING_VPS",
-            "is_known_device": 0,
-            "geo_velocity_kmh": 4200.0,
-            "failed_attempts_10m": 3,
-            "is_headless_ua": 1,
-            "post_auth_sensitive_action": 1,
-        }
-        try:
-            resp = requests.post(f"{API_BASE_URL}/api/v1/events/auth", json=payload, headers=API_HEADERS, timeout=5)
-            if resp.status_code == 200:
-                st.success("Ataque simulado enviado! Incidente e Análise de IA gerados.")
-            else:
-                st.error(f"Erro na API: {resp.text}")
-        except Exception as exc:
-            st.error(f"API offline em {API_BASE_URL}: {exc}")
-
-    if st.button("✅ Simular Login Legítimo", use_container_width=True):
-        payload = {
-            "user": sim_user,
-            "source_ip": "177.32.45.10",
-            "asn_type": "CORPORATE_VPN",
-            "is_known_device": 1,
-            "geo_velocity_kmh": 12.0,
-            "failed_attempts_10m": 0,
-            "is_headless_ua": 0,
-            "post_auth_sensitive_action": 0,
-        }
-        try:
-            resp = requests.post(f"{API_BASE_URL}/api/v1/events/auth", json=payload, headers=API_HEADERS, timeout=5)
-            if resp.status_code == 200:
-                st.info("Login legítimo registrado com risco LOW.")
-        except Exception as exc:
-            st.error(f"API offline em {API_BASE_URL}: {exc}")
-
-    st.divider()
-    if st.button("🔄 Atualizar Painel", use_container_width=True):
-        st.rerun()
-
-# ==========================================
-# CONSULTA AO BANCO DE DADOS (SQLITE)
-# ==========================================
-db = SessionLocal()
-try:
-    events = db.query(AuthenticationEvent).order_by(AuthenticationEvent.created_at.desc()).all()
-    incidents = db.query(Incident).order_by(Incident.created_at.desc()).all()
-    analyses = db.query(AIAnalysis).order_by(AIAnalysis.created_at.desc()).all()
-    pending_actions = db.query(AutomatedAction).filter_by(status="AWAITING_HUMAN_APPROVAL").all()
-    audit_logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(25).all()
-    active_model = db.query(ModelVersion).filter_by(is_active=True).first()
-finally:
-    db.close()
-
-# ==========================================
-# KPIs PRINCIPAIS (MÓDULO 10)
-# ==========================================
-total_events = len(events)
-critical_incidents = sum(1 for i in incidents if i.severity in ("CRITICAL", "HIGH"))
-resolved_incidents = sum(1 for i in incidents if i.status == "CONTAINED_AUTHORIZED")
-suspicious_attempts = sum(1 for e in events if e.risk_level != "LOW")
-
-k1, k2, k3, k4 = st.columns(4)
-k1.metric("Eventos Monitorados", total_events)
-k2.metric("Incidentes Críticos / Altos", critical_incidents)
-k3.metric("Incidentes Contidos", resolved_incidents)
-k4.metric("Tentativas Suspeitas", suspicious_attempts)
-
-st.divider()
-
-# ==========================================
-# ABAS DOS MÓDULOS INTEGRADOS
-# ==========================================
-tab_soc, tab_ai, tab_scanners, tab_gov = st.tabs(
-    (
-        "📊 Monitoramento & Aprovação (Módulos 01, 06 & 09)",
-        "🤖 Agente Analista & Recuperação (Módulos 07 & 08)",
-        "🔍 Threat Intel, Vulns & Phishing (Módulos 02, 03 & 04)",
-        "📜 Governança, ML & Auditoria (Módulo 05)",
-    )
-)
-
-with tab_soc:
-    col_left, col_right = st.columns((1.3, 1.0))
-
-    with col_left:
-        st.subheader("Histórico de Eventos de Autenticação")
-        if events:
-            df_ev = pd.DataFrame(
-                tuple(
-                    {
-                        "Horário (UTC)": e.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                        "Usuário": e.user_email,
-                        "IP Origem": e.source_ip,
-                        "ASN": e.asn_type,
-                        "Score ML": e.anomaly_score,
-                        "Risco": e.risk_level,
-                    }
-                    for e in events
-                )
             )
             st.dataframe(df_ev, use_container_width=True, hide_index=True)
 
@@ -150,7 +6,7 @@ with tab_soc:
             risk_counts = df_ev.groupby("Risco").size()
             st.bar_chart(risk_counts)
         else:
-            st.info("Nenhum evento registrado ainda. Use o botão na barra lateral para simular um evento.")
+            st.info("Nenhum evento registrado ainda. Abra a barra lateral esquerda (>) e clique em Simular Ataque.")
 
     with col_right:
         st.subheader("🚨 Contenções Aguardando Aprovação Humana")
@@ -161,28 +17,42 @@ with tab_soc:
                     st.caption(f"ID da Ação: {act.id} | Status: {act.status}")
                     c_app, c_rej = st.columns(2)
                     if c_app.button("✅ Aprovar Bloqueio", key=f"app_{act.id}", use_container_width=True):
-                        requests.post(
-                            f"{API_BASE_URL}/api/v1/actions/{act.id}/decide",
-                            json={
-                                "approver_email": "soc.lead@nexuscorp-demo.local",
-                                "decision": "APPROVED",
-                                "notes": "Aprovado via SOC Dashboard.",
-                            },
-                            headers=API_HEADERS,
-                            timeout=5,
-                        )
+                        db_act = SessionLocal()
+                        try:
+                            target_act = db_act.query(AutomatedAction).filter_by(id=act.id).first()
+                            if target_act:
+                                target_act.status = "APPROVED"
+                                target_act.approved_by = "soc.lead@nexuscorp-demo.local"
+                                inc = db_act.query(Incident).filter_by(id=target_act.incident_id).first()
+                                if inc:
+                                    inc.status = "CONTAINED_AUTHORIZED"
+                                db_act.add(
+                                    AuditLog(
+                                        organization_id=target_act.organization_id,
+                                        actor="soc.lead@nexuscorp-demo.local",
+                                        action="HUMAN_DECISION_APPROVED",
+                                        target=act.id,
+                                        details={"status": "CONTAINED_AUTHORIZED"},
+                                    )
+                                )
+                                db_act.commit()
+                        finally:
+                            db_act.close()
                         st.rerun()
+
                     if c_rej.button("❌ Rejeitar", key=f"rej_{act.id}", use_container_width=True):
-                        requests.post(
-                            f"{API_BASE_URL}/api/v1/actions/{act.id}/decide",
-                            json={
-                                "approver_email": "soc.lead@nexuscorp-demo.local",
-                                "decision": "REJECTED",
-                                "notes": "Falso positivo descartado pelo analista.",
-                            },
-                            headers=API_HEADERS,
-                            timeout=5,
-                        )
+                        db_act = SessionLocal()
+                        try:
+                            target_act = db_act.query(AutomatedAction).filter_by(id=act.id).first()
+                            if target_act:
+                                target_act.status = "REJECTED"
+                                target_act.approved_by = "soc.lead@nexuscorp-demo.local"
+                                inc = db_act.query(Incident).filter_by(id=target_act.incident_id).first()
+                                if inc:
+                                    inc.status = "CONTAINMENT_REJECTED"
+                                db_act.commit()
+                        finally:
+                            db_act.close()
                         st.rerun()
         else:
             st.success("Nenhuma ação crítica pendente de aprovação no momento.")
@@ -229,12 +99,7 @@ with tab_scanners:
         url_input = st.text_input("URL Suspeita", value="http://nexusc0rp-auth.test")
         msg_input = st.text_area("Texto da Mensagem", value="URGENTE: Sua conta será bloqueada hoje. Atualize sua senha.")
         if st.button("Analisar Phishing", use_container_width=True):
-            r = requests.post(
-                f"{API_BASE_URL}/api/v1/scanner/phishing",
-                json={"url": url_input, "message_text": msg_input},
-                headers=API_HEADERS,
-                timeout=5,
-            ).json()
+            r = phishing_detector.analyze_url_and_message(url=url_input, message_text=msg_input)
             st.metric("Score de Phishing", f"{r['phishing_score_0_100']}/100", r["classification"])
             for ind in r["explained_indicators"]:
                 st.warning(ind)
@@ -243,13 +108,26 @@ with tab_scanners:
         st.subheader("🌐 Threat Intelligence")
         ioc_input = st.text_input("IP ou Domínio (IoC)", value="198.51.100.42")
         if st.button("Consultar IoC", use_container_width=True):
-            r = requests.get(
-                f"{API_BASE_URL}/api/v1/threat-intel/{ioc_input}",
-                headers=API_HEADERS,
-                timeout=5,
-            ).json()
+            r = threat_intel.lookup_indicator(ioc_input)
             if r["malicious"]:
                 st.error("Indicador Malicioso Confirmado!")
+                db_ti = SessionLocal()
+                try:
+                    org = db_ti.query(Organization).filter_by(domain="nexuscorp-demo.local").first()
+                    tdata = r["threat_data"]
+                    db_ti.add(
+                        ThreatIndicator(
+                            organization_id=org.id,
+                            indicator_value=r["indicator"],
+                            indicator_type=tdata["type"],
+                            threat_category=tdata["category"],
+                            confidence=tdata["confidence"],
+                            mitre_technique=tdata["mitre"],
+                        )
+                    )
+                    db_ti.commit()
+                finally:
+                    db_ti.close()
             else:
                 st.success("Nenhuma ameaça conhecida encontrada.")
             st.json(r["threat_data"])
@@ -263,17 +141,14 @@ with tab_scanners:
             default=("OpenSSH 7.4", "Nginx 1.18.0"),
         )
         if st.button("Avaliar Ativo", use_container_width=True):
-            r = requests.post(
-                f"{API_BASE_URL}/api/v1/scanner/vulnerabilities",
-                json={
+            r = vuln_scanner.scan_authorized_asset(
+                {
                     "asset_id": "SRV-01",
                     "hostname": host_input,
                     "exposed_ports": (22, 443),
                     "services": svc_select,
-                },
-                headers=API_HEADERS,
-                timeout=5,
-            ).json()
+                }
+            )
             st.metric("Maior CVSS Encontrado", r["highest_cvss"])
             st.json(r["findings"])
 
@@ -297,4 +172,3 @@ with tab_gov:
             )
         )
         st.dataframe(df_aud, use_container_width=True, hide_index=True)
-        

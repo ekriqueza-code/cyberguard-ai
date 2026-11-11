@@ -267,7 +267,7 @@ with tab_soc:
                     if st.button("✅ Aprovar Bloqueio", key=f"app_{act.id}", use_container_width=True):
                         approve_pending_action(act.id)
                         st.rerun()
-            else:
+       else:
             st.success("Nenhuma ação crítica pendente.")
 
         st.subheader("Incidentes Registrados")

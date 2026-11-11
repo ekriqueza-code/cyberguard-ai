@@ -242,7 +242,7 @@ with tab_soc:
                                 )
                                 db_a.commit()
                         finally:
-          db_a.close()
+                            db_a.close()
                         st.rerun()
         else:
             st.success("Nenhuma ação crítica pendente.")

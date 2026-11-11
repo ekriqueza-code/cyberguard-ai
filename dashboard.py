@@ -268,7 +268,7 @@ with tab_soc:
                         approve_pending_action(act.id)
                         st.rerun()
        else:
-            st.success("Nenhuma ação crítica pendente.")
+           st.success("Nenhuma ação crítica pendente.")
 
         st.subheader("Incidentes Registrados")
         if incidents:

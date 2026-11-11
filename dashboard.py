@@ -270,8 +270,8 @@ with tab_soc:
        else:
            st.success("Nenhuma ação crítica pendente.")
 
-        st.subheader("Incidentes Registrados")
-        if incidents:
+       st.subheader("Incidentes Registrados")
+       if incidents:
             st.dataframe(
                 pd.DataFrame(
                     tuple(

@@ -258,4 +258,79 @@ with tab_soc:
         else:
             st.info("Abra a barra lateral esquerda (>) e clique em Simular Ataque ATO.")
 
-    with c_right:
+    with c_right:st.subheader("🚨 Aprovação Humana (Módulo 09)")
+        if pending_actions:
+            for act in pending_actions:
+                with st.container(border=True):
+                    st.markdown(f"**Ação:** `{act.action_type}`")
+                    if st.button("✅ Aprovar Bloqueio", key=f"app_{act.id}", use_container_width=True):
+                        approve_pending_action(act.id)
+                        st.rerun()
+        else:
+            st.success("Nenhuma ação crítica pendente.")
+
+        st.subheader("Incidentes Registrados")
+        if incidents:
+            st.dataframe(
+                pd.DataFrame(
+                    tuple(
+                        {"Código": i.incident_code, "Alvo": i.target_user, "Severidade": i.severity, "Status": i.status}
+                        for i in incidents
+                    )
+                ),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+with tab_ai:
+    st.subheader("Relatórios do Agente Analista de Segurança")
+    if analyses:
+        for item in analyses:
+            with st.expander(f"Relatório Investigativo — Confiança: {item.confidence_score * 100:.1f}%", expanded=True):
+                st.write(item.executive_summary)
+                st.json(item.mitre_mapping)
+    else:
+        st.info("Simule um ataque crítico para gerar o relatório investigativo.")
+
+with tab_scanners:
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.subheader("🎣 Phishing Detector")
+        u_in = st.text_input("URL", value="http://nexusc0rp-auth.test")
+        m_in = st.text_area("Mensagem", value="URGENTE: Sua conta será bloqueada hoje.")
+        if st.button("Analisar Phishing", use_container_width=True):
+            r = phishing_detector.analyze_url_and_message(url=u_in, message_text=m_in)
+            st.metric("Score", f"{r['phishing_score_0_100']}/100", r["classification"])
+            for ind in r["explained_indicators"]:
+                st.warning(ind)
+    with c2:
+        st.subheader("🌐 Threat Intelligence")
+        ioc = st.text_input("IP / Domínio", value="198.51.100.42")
+        if st.button("Consultar IoC", use_container_width=True):
+            r = threat_intel.lookup_indicator(ioc)
+            st.json(r["threat_data"])
+    with c3:
+        st.subheader("🔎 Vulnerability Scanner")
+        host = st.text_input("Hostname", value="sso.nexuscorp-demo.local")
+        svcs = st.multiselect("Serviços", ("OpenSSH 7.4", "PostgreSQL 12.1", "Nginx 1.18.0"), default=("OpenSSH 7.4",))
+        if st.button("Avaliar Ativo", use_container_width=True):
+            r = vuln_scanner.scan_authorized_asset({"hostname": host, "exposed_ports": (22, 443), "services": svcs})
+            st.metric("Maior CVSS", r["highest_cvss"])
+            st.json(r["findings"])
+
+with tab_gov:
+    if active_model:
+        st.write(f"**Modelo Ativo:** `{active_model.model_code}` | **Algoritmo:** {active_model.algorithm}")
+        st.json(active_model.metrics)
+    if audit_logs:
+        st.dataframe(
+            pd.DataFrame(
+                tuple(
+                    {"Data": a.created_at.strftime("%H:%M:%S"), "Ator": a.actor, "Ação": a.action, "Alvo": a.target}
+                    for a in audit_logs
+                )
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+        

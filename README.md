@@ -1,5 +1,6 @@
-https://cyberguard-ai-rxby85itp6pacp8i7i8en5.streamlit.app/
-# cyberguard-ai# 🛡️ CyberGuard AI — Intelligent Security Operations & Threat Detection Platform
+# 🛡️ CyberGuard AI — Intelligent Security Operations & Threat Detection Platform
+
+> **🚀 Acesse a Aplicação Online (Live Demo):** https://cyberguard-ai-rxby85itp6pacp8i7i8en5.streamlit.app/
 
 Plataforma modular e integrada de **Cybersecurity**, **Data Science** e **Inteligência Artificial** projetada para monitoramento de contas, detecção híbrida de anomalias, inteligência de ameaças, análise de vulnerabilidades e resposta automatizada com supervisão humana (*Human-in-the-Loop*).
 
